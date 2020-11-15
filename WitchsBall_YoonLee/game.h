@@ -36,6 +36,7 @@ typedef struct {
 	int tileCol;
 	int tileRow;
 	int active;
+	int origin;
 } BULLET;
 
 typedef struct {
@@ -71,6 +72,7 @@ typedef struct {
 
 // Variables
 extern int gamePhase;
+extern int enemiesRemaining;
 extern OBJ_ATTR shadowOAM[128];
 extern PLAYER player;
 extern BULLET playerBullets[PLAYERSHOT];
@@ -79,7 +81,10 @@ extern ENEMY enemyPool[ENEMYCOUNT];
 
 // Prototypes
 void initGame(int phase);
-void updateGame();
+void updateGameStage(int state);
+void updateGamePhase1(int state);
+void updateGamePhase2(int state);
+void updateGamePhase3(int state);
 void drawGame();
 void initPlayer();
 void initEnemies(int phase);
@@ -90,6 +95,7 @@ void updateBullet(BULLET* b);
 void drawPlayer();
 void drawEnemy(ENEMY* e);
 void drawBullet(BULLET* b);
+void playerFire();
 void enemyPatternA();
 void enemyPatternB();
 void enemyPatternC();

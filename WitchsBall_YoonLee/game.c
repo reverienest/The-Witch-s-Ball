@@ -16,8 +16,26 @@ void initGame(int phase) {
     initBullets(phase);
 }
 
-// Updates the game each frame
-void updateGame() {
+// Updates the game each frame in the stage level
+void updateGameStage(int state) {
+
+	updatePlayer();
+}
+
+// Updates the game each frame in boss phase 1
+void updateGamePhase1(int state) {
+
+	updatePlayer();
+}
+
+// Updates the game each frame in boss phase 2
+void updateGamePhase2(int state) {
+
+	updatePlayer();
+}
+
+// Updates the game each frame in boss phase 3
+void updateGamePhase3(int state) {
 
 	updatePlayer();
 }
@@ -42,6 +60,7 @@ void initPlayer() {
     player.cdel = 2;
     player.bombs = 3;
     player.lives = 5;
+    player.bulletTimer = 20;
 
     // Place at the bottom of the screen
     player.row = SCREENHEIGHT - 50 - (player.width / 2);
@@ -66,23 +85,37 @@ void initEnemies(int phase) {
 }
 
 void initBullets(int phase) {
-        //initializes enemies
-    for (int i = 0; i < ENEMYSHOT; i++) {
-        generalBullets[i].height = 4;
-        generalBullets[i].width = 4;
-        generalBullets[i].row = generalBullets[i].height - 1;
-        generalBullets[i].col = 0;
-        generalBullets[i].rdel = 0;
-        generalBullets[i].cdel = 0;
-        generalBullets[i].active = 0;
-        generalBullets[i].shotType = 0;
-        generalBullets[i].tileCol = 2;
-        generalBullets[i].tileCol = 0;
-    }
-
+    //initializes player bullets
+    for (int i = 0; i < PLAYERSHOT; i++) {
+            playerBullets[i].height = 4;
+            playerBullets[i].width = 4;
+            playerBullets[i].row = playerBullets[i].height - 1;
+            playerBullets[i].col = 0;
+            playerBullets[i].rdel = 0;
+            playerBullets[i].cdel = 0;
+            playerBullets[i].active = 0;
+            playerBullets[i].shotType = 0;
+            playerBullets[i].tileCol = 2;
+            playerBullets[i].tileCol = 0;
+            playerBullets[i].active = 0;
+            playerBullets[i].origin = 0;
+        }
 
     if (phase == 2) {
-        
+        for (int i = 0; i < ENEMYSHOT; i++) {
+            generalBullets[i].height = 4;
+            generalBullets[i].width = 4;
+            generalBullets[i].row = generalBullets[i].height - 1;
+            generalBullets[i].col = 0;
+            generalBullets[i].rdel = 0;
+            generalBullets[i].cdel = 0;
+            generalBullets[i].active = 0;
+            generalBullets[i].shotType = 0;
+            generalBullets[i].tileCol = 2;
+            generalBullets[i].tileCol = 0;
+            generalBullets[i].active = 0;
+            generalBullets[i].origin = 1;
+        }
     } else if (phase == 3) {
 
     } else if (phase == 4) {
@@ -124,25 +157,53 @@ void updatePlayer() {
             player.col += player.cdel;
         }
     }
+
+    // Fire bullets
+	if (BUTTON_PRESSED(BUTTON_A) && player.bulletTimer >= 15) {
+
+		fireBullet();
+		player.bulletTimer = 0;
+	}
+    player.bulletTimer++;
+
+ // Handle enemy-bullet collisions
+	for (int i = 0; i < generalBullets; i++) {
+		if (generalBullets[i].active  && collision(player.col, player.row, player.width, player.height,
+			generalBullets[i].col, generalBullets[i].row, generalBullets[i].width, generalBullets[i].height)) {
+
+			// Put bullet in pool & lose a life
+			generalBullets[i].active = 0;
+            player.lives--;
+        }
+    }
 }
 
 //Handle every-frame actions of the enemies
 void updateEnemy(ENEMY* e) {
     // Handle enemy-bullet collisions
-	for (int i = 0; i < generalBullets; i++) {
-		if (generalBullets[i].active  && collision(e->col, e->row, e->width, e->height,
-			generalBullets[i].col, generalBullets[i].row, generalBullets[i].width, generalBullets[i].height)) {
+	for (int i = 0; i < playerBullets; i++) {
+		if (playerBullets[i].active  && collision(e->col, e->row, e->width, e->height,
+			playerBullets[i].col, playerBullets[i].row, playerBullets[i].width, playerBullets[i].height)) {
 
 			// Put bullet & enemy back in the pool
-			generalBullets[i].active = 0;
+			playerBullets[i].active = 0;
             e->active = 0;
+            enemiesRemaining--;
         }
     }
 }
 
 //Handle every-frame actions of the bullets
 void updateBullet(BULLET* b) {
+    // If active, act
+	if (b->active) {
+		if (b->row + 1 >= 0) {
+			b->row += b->rdel;
 
+		} else {
+			b->active = 0;
+		}
+	}
 }
 
 // Draw the player
@@ -163,6 +224,26 @@ void drawEnemy(ENEMY* e) {
     } else {
         shadowOAM[1].attr0 = ATTR0_HIDE;
     }
+}
+
+//player firing mode.
+void playerFire() {
+    // Find the first inactive bullet
+	for (int i = 0; i < PLAYERSHOT; i++) {
+		if (!playerBullets[i].active) {
+
+			// Position the new bullet
+			playerBullets[i].row = player.row;
+			playerBullets[i].col = player.col + player.width/2
+				- playerBullets[i].width/2;
+
+			// Take the bullet out of the pool
+			playerBullets[i].active = 1;
+
+			// Break out of the loop
+			break;
+		}
+	}
 }
 
 //logic for determining enemy behavior.
@@ -200,7 +281,7 @@ void enemyPatternA(ENEMY* e) {
 void enemyPatternB(ENEMY* e) {
     
     int count= 0;
-    // Find the first inactive bullet of type 0
+    // Find the first inactive bullet of type 0 (to be 1)
 	while (count < 8) {
         for (int i = 0; i < ENEMYSHOT; i++) {
 		    if ((!generalBullets[i].active) && (generalBullets[i].shotType == 1)) {

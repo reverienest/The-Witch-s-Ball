@@ -27,8 +27,8 @@ void goToStart();
 void start();
 void goToInstructions();
 void instructions();
-void goToGame();
-void game();
+void goToStage();
+void stage();
 void goToPause();
 void pause();
 void goToWin();
@@ -41,11 +41,10 @@ enum
 {
     START,
     INSTR,
-    GAME,
-    //STAGE
-    //BOSS1
-    //BOSS2
-    //BOSS3
+    STAGE,
+    //BOSS1,
+    //BOSS2,
+    //BOSS3,
     PAUSE,
     WIN,
     LOSE
@@ -79,8 +78,8 @@ int main()
         case INSTR:
             instructions();
             break;
-        case GAME:
-            game();
+        case STAGE:
+            stage();
             break;
         case PAUSE:
             pause();
@@ -160,20 +159,20 @@ void instructions() {
 }
 
 // Sets up the game state
-void goToGame() {
+void goToStage() {
     // Sets up the game background
     REG_BG0CNT = BG_CHARBLOCK(0) | BG_SCREENBLOCK(28) | BG_4BPP | BG_SIZE_SMALL;
     DMANow(3, gamescnPal, PALETTE, 256);
     DMANow(3, gamescnTiles, &CHARBLOCK[0], gamescnTilesLen / 2);
     DMANow(3, gamescnMap, &SCREENBLOCK[28], gamescnMapLen / 2);
 
-    state = GAME;
+    state = STAGE;
 }
 
 // Runs every frame of the game state
-void game() {
+void stage() {
 
-    updateGame();
+    updateGameStage(state);
     drawGame();
 
     //Copy the shadowOAM into the OAM
@@ -182,9 +181,11 @@ void game() {
     
     if (BUTTON_PRESSED(BUTTON_START)) {
         goToPause();
-    } else if (BUTTON_PRESSED(BUTTON_A)) {
+    } 
+    
+    if (enemiesRemaining == 0) {
         goToWin();
-    } else if (BUTTON_PRESSED(BUTTON_B)) {
+    } else if (player.lives == 0) {
         goToLose();
     }
 }
